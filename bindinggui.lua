@@ -395,15 +395,19 @@ end
 Update.Ability = function(index)
     local res = state.ActionResources[index];
     local name = encoding:ShiftJIS_To_UTF8(res.Name[1]);
-    if (bit.band(res.Targets, 0xFC) ~= 0) then
-        if (gSettings.DefaultSelectTarget) then
-            state.MacroText = { string.format('/ja \"%s\" <st>', name) };
+    if (state.IsNewBinding) then
+        if (bit.band(res.Targets, 0xFC) ~= 0) then
+            if (gSettings.DefaultSelectTarget) then
+                state.Indices.Target = 3; --<st>
+            else
+                state.Indices.Target = 2; --<t>
+            end
         else
-            state.MacroText = { string.format('/ja \"%s\" <t>', name) };
+            state.Indices.Target = 1; --<me>
         end
-    else
-        state.MacroText = { string.format('/ja \"%s\" <me>', name) };
     end
+    local target = state.Combos.Target[state.Indices.Target];
+    state.MacroText = { string.format('/ja \"%s\" %s', name, target) };
     state.MacroLabel = { name };
     if ((res.RecastTimerId == 0) or (res.RecastTimerId == 254)) then
         state.MacroImage = { 'abilities/1hr.png' };
@@ -437,15 +441,19 @@ end
 Update.Item = function(index)
     local res = state.ActionResources[index];
     local name = encoding:ShiftJIS_To_UTF8(res.Name[1]);
-    if (bit.band(res.Targets, 0xFC) ~= 0) then
-        if (gSettings.DefaultSelectTarget) then
-            state.MacroText = { string.format('/item \"%s\" <st>', name) };
+    if (state.IsNewBinding) then
+        if (bit.band(res.Targets, 0xFC) ~= 0) then
+            if (gSettings.DefaultSelectTarget) then
+                state.Indices.Target = 3; --<st>
+            else
+                state.Indices.Target = 2; --<t>
+            end
         else
-            state.MacroText = { string.format('/item \"%s\" <t>', name) };
+            state.Indices.Target = 1; --<me>
         end
-    else
-        state.MacroText = { string.format('/item \"%s\" <me>', name) };
     end
+    local target = state.Combos.Target[state.Indices.Target];
+    state.MacroText = { string.format('/item \"%s\" %s', name, target) };
     state.MacroLabel = { name };
     state.MacroImage = { string.format('ITEM:%u', res.Id) };
     state.CostOverride = nil;
@@ -455,15 +463,19 @@ end
 Update.Spell = function(index)
     local res = state.ActionResources[index];
     local name = encoding:ShiftJIS_To_UTF8(res.Name[1]);
-    if (bit.band(res.Targets, 0xFC) ~= 0) then
-        if (gSettings.DefaultSelectTarget) then
-            state.MacroText = { string.format('/ma \"%s\" <st>', name) };
+    if (state.IsNewBinding) then
+        if (bit.band(res.Targets, 0xFC) ~= 0) then
+            if (gSettings.DefaultSelectTarget) then
+                state.Indices.Target = 3; --<st>
+            else
+                state.Indices.Target = 2; --<t>
+            end
         else
-            state.MacroText = { string.format('/ma \"%s\" <t>', name) };
+            state.Indices.Target = 1; --<me>
         end
-    else
-        state.MacroText = { string.format('/ma \"%s\" <me>', name) };
     end
+    local target = state.Combos.Target[state.Indices.Target];
+    state.MacroText = { string.format('/ma \"%s\" %s', name, target) };
     state.MacroLabel = { name };
     state.MacroImage = { string.format('spells/%u.png', res.Index) };
     state.CostOverride = { '' };
@@ -473,6 +485,9 @@ end
 Update.Trust = function(index)
     local res = state.ActionResources[index];
     local name = encoding:ShiftJIS_To_UTF8(res.Name[1]);
+    if (state.IsNewBinding) then
+        state.Indices.Target = 1; --<me>
+    end
     state.MacroText = { string.format('/ma \"%s\" <me>', name) };
     state.MacroLabel = { name };
     state.MacroImage = { string.format('spells/%u.png', res.Index) };
@@ -483,19 +498,33 @@ end
 Update.Weaponskill = function(index)
     local res = state.ActionResources[index];
     local name = encoding:ShiftJIS_To_UTF8(res.Name[1]);
-    if (bit.band(res.Targets, 0xFC) ~= 0) then
-        if (gSettings.DefaultSelectTarget) then
-            state.MacroText = { string.format('/ws \"%s\" <st>', name) };
+    if (state.IsNewBinding) then
+        if (bit.band(res.Targets, 0xFC) ~= 0) then
+            if (gSettings.DefaultSelectTarget) then
+                state.Indices.Target = 3; --<st>
+            else
+                state.Indices.Target = 2; --<t>
+            end
         else
-            state.MacroText = { string.format('/ws \"%s\" <t>', name) };
+            state.Indices.Target = 1; --<me>
         end
-    else
-        state.MacroText = { string.format('/ws \"%s\" <me>', name) };
     end
+    local target = state.Combos.Target[state.Indices.Target];
+    state.MacroText = { string.format('/ws \"%s\" %s', name, target) };
     state.MacroLabel = { name };
     state.MacroImage = { wsmap[res.Id] or '' };
     state.CostOverride = { '' };
     UpdateMacroImage();
+end
+
+Update.Target = function(index)
+    local target = state.Combos.Target[state.Indices.Target];
+    local posOfLt = string.find( state.MacroText[1], '<' );
+    if posOfLt == nil or target == nil then
+        return;
+    end
+    local macroTextSansTarget = string.sub( state.MacroText[1], 1, posOfLt - 1 );
+    state.MacroText[1] = macroTextSansTarget .. target;
 end
 
 local function GetBindResource()
@@ -636,7 +665,7 @@ function exposed:HandleButton(button, pressed)
             end
 
             if (button == 'BindingDown') then
-                if (state.SelectedIndex < 3) then
+                if (state.SelectedIndex < 4) then
                     state.SelectedIndex = state.SelectedIndex + 1;
                 end
             end
@@ -648,6 +677,8 @@ function exposed:HandleButton(button, pressed)
                     AdvanceCombo('Type');
                 elseif (state.SelectedIndex == 3) then
                     AdvanceCombo('Action');
+                elseif (state.SelectedIndex == 4) then
+                    AdvanceCombo('Target');
                 end
             end
             
@@ -658,6 +689,8 @@ function exposed:HandleButton(button, pressed)
                     DecrementCombo('Type');
                 elseif (state.SelectedIndex == 3) then
                     DecrementCombo('Action');
+                elseif (state.SelectedIndex == 4) then
+                    DecrementCombo('Target');
                 end
             end
         end
@@ -698,7 +731,7 @@ function exposed:Render()
                     if (state.ForceTab == 1) then
                         state.ForceTab = nil;
                     end
-                    imgui.BeginChild('BindingChild', { 253, 390 }, ImGuiChildFlags_Borders);
+                    imgui.BeginChild('BindingChild', { 253, 500 }, ImGuiChildFlags_Borders);
                     imgui.TextColored(header, 'Combo Type');
                     imgui.Text(GetMacroStateText(state.MacroState));
                     imgui.TextColored(header, 'Macro Button');
@@ -710,6 +743,13 @@ function exposed:Render()
                         ComboBox('Action', 'Action', state.SelectedIndex == 3 and activeHeader or header);
                     else
                         imgui.TextColored(state.SelectedIndex == 3 and activeHeader or header, 'Action');
+                        imgui.Text('N/A');
+                    end
+                    if (#state.Combos.Action > 0) then
+                        ComboBox('Target', 'Target', state.SelectedIndex == 4 and activeHeader or header);
+                        imgui.ShowHelp('<t> main target, <me> your character, <st> sub target (select target), <stpt> st party members, <stnpc> st npcs');
+                    else
+                        imgui.TextColored(state.SelectedIndex == 4 and activeHeader or header, 'Target');
                         imgui.Text('N/A');
                     end
                     imgui.TextColored(header, 'Macro');
@@ -838,6 +878,7 @@ function exposed:Show(macroState, macroButton)
     if (binding == nil) then
         state = {
             IsOpen = { true },
+            IsNewBinding = true,
             SelectedIndex = 1,
             Tab = 1,
             ForceTab = 1,
@@ -849,6 +890,7 @@ function exposed:Show(macroState, macroButton)
                 ['Scope'] = T{ 'Global', 'Job', 'Palette' },
                 ['Type'] = T{ 'Ability', 'Command', 'Empty', 'Item', 'Spell', 'Trust', 'Weaponskill' },
                 ['Action'] = T{ },
+                ['Target'] = T{ '<me>', '<t>', '<st>', '<stpt>', '<stnpc>' },
             },
             Components = {
                 Cost = true,
@@ -870,12 +912,14 @@ function exposed:Show(macroState, macroButton)
             MacroText = { '' },
             MacroLabel = { '' },
         };
+        state.Indices.Target = 1;
         Setup.Ability();
         return;
     end
 
     state = {
         IsOpen = { true },
+        IsNewBinding = false;
         SelectedIndex = 1,
         MacroState = macroState,
         MacroButton = macroButton,
@@ -887,6 +931,7 @@ function exposed:Show(macroState, macroButton)
             ['Scope'] = T{ 'Global', 'Job', 'Palette' },
             ['Type'] = T{ 'Ability', 'Command', 'Empty', 'Item', 'Spell', 'Trust', 'Weaponskill' },
             ['Action'] = T{ },
+            ['Target'] = T{ '<me>', '<t>', '<st>', '<stpt>', '<stnpc>' },
         },
         Components = {
             Cost = binding.ShowCost,
@@ -993,6 +1038,20 @@ function exposed:Show(macroState, macroButton)
                 state.Indices.Action = index;
                 break;
             end
+        end
+    end
+
+    local target = '<t>';
+    if (type(binding.Macro) == 'table') then
+        local posOfLt = string.find(binding.Macro[1], '<');
+        local posOfRt = string.find(binding.Macro[1], '>');
+        if (posOfLt ~= nil and posOfRt ~= nil) then
+            target = string.sub(binding.Macro[1], posOfLt, posOfRt);
+        end
+    end
+    for index,entry in ipairs(state.Combos.Target) do
+        if (entry == target) then
+            state.Indices.Target = index;
         end
     end
 
