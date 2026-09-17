@@ -227,6 +227,7 @@ local layout = {
         BindingConfirm = 'Circle',
         BindingCancel = 'Cross',
         BindingTab = 'Triangle',
+        BindingToggle = 'Touchpad',
     },
 
     --[[

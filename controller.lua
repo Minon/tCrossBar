@@ -129,41 +129,6 @@ function controller:SetLayout(layoutName)
     end
 end
 
-function controller:Tick()
-    local isComboPressed = (self.ComboState.Left == true) and (self.ComboState.Right == true) and (self.ComboState.PrevPalette == true) and (self.ComboState.NextPalette == true);
-
-    if isComboPressed == true then
-        if (self.BindMenuState.Pending == false) then
-            self.BindMenuState.Pending = true;
-            self.BindMenuState.Timer = os.clock() + gSettings.BindMenuTimer;
-        elseif (self.BindMenuState.Timer ~= nil) and (os.clock() > self.BindMenuState.Timer) then
-            if (gBindingGUI:GetActive()) then
-                gBindingGUI:Close();
-                self.BindMenuState.Active = false;
-            elseif (not self.BindMenuState.Active) then
-                if (gSingleDisplay) then
-                    self.BindMenuState.Active = true;
-                else
-                    Error('Cannot open bind menu without a valid single display.  Please enter "/tc" to open the menu and select a valid layout.')
-                end
-            else
-                self.BindMenuState.Active = false;
-            end
-            self.BindMenuState.Timer = nil;
-        end
-    else
-        self.BindMenuState.Pending = false;
-    end
-
-    if (self.BindMenuState.Active == true) and (gBindingGUI:GetActive() == false) then
-        if (imgui.Begin(string.format('%s v%s Binding', addon.name, addon.version), { true }, ImGuiWindowFlags_AlwaysAutoResize)) then
-            imgui.Text('Press any macro combination to bind to it.');
-            imgui.Text('Hold binding menu key combination to close this menu.');
-            imgui.End();
-        end
-    end
-end
-
 function controller:Trigger(button, pressed)
     local controls = gSettings.Controls[self.Layout.Name];
 
@@ -239,6 +204,35 @@ function controller:Trigger(button, pressed)
             gBindings:NextPalette();
         end
         if (self:GetMacroState() ~= 0) then
+            return true;
+        end
+    end
+
+    if (button == controls.BindingToggle) then
+        self.ComboState.BindingToggle = pressed;
+        if (self.ComboState.Left == true) or (self.ComboState.Right == true) then
+            if (pressed == true) then
+                if (gBindingGUI:GetActive()) then
+                    gBindingGUI:Close();
+                    self.BindMenuState.Active = false;
+                elseif (not self.BindMenuState.Active) then
+                    if (gSingleDisplay) then
+                        self.BindMenuState.Active = true;
+                    else
+                        Error('Cannot open bind menu without a valid single display.  Please enter "/tc" to open the menu and select a valid layout.')
+                    end
+                else
+                    self.BindMenuState.Active = false;
+                end
+            end
+
+            if (self.BindMenuState.Active == true) and (gBindingGUI:GetActive() == false) then
+                if (imgui.Begin(string.format('%s v%s Binding', addon.name, addon.version), { true }, ImGuiWindowFlags_AlwaysAutoResize)) then
+                    imgui.Text('Press any macro combination to bind to it.');
+                    imgui.Text('Hold binding menu key combination to close this menu.');
+                    imgui.End();
+                end
+            end
             return true;
         end
     end

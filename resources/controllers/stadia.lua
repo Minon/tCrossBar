@@ -191,6 +191,7 @@ local layout = {
         BindingConfirm = 'A',
         BindingCancel = 'B',
         BindingTab = 'Y',
+        BindingToggle = 'Options',
     },
 
     --[[

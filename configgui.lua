@@ -29,6 +29,7 @@ local validControls = T{
     { Name='BindingConfirm', Description='Confirms current settings in binding menu.' },
     { Name='BindingCancel', Description='Cancels current settings in binding menu and returns to macro select screen.' },
     { Name='BindingTab', Description='Changes tab in binding menu.' },
+    { Name='BindingToggle', Description='Toggles the binding menu when pressed while ComboLeft or ComboRight is held.'},
 };
 
 local function GetDefaultPosition(layout)
@@ -353,13 +354,6 @@ function exposed:Render()
                     imgui.ShowHelp('Loads the selected device mapping.', true);
                     CheckBox('Inventory Passthrough', 'AllowInventoryPassthrough');
                     imgui.ShowHelp('When enabled, L2/R2/ZL/ZR will be passed to the game when inventory is the topmost menu.');
-                    imgui.TextColored(header, 'Bind Menu Timer');
-                    local buff = { gSettings.BindMenuTimer };
-                    if imgui.SliderFloat('##BindMenuDurationSlider', buff, 0.1, 1.5, '%.2f', ImGuiSliderFlags_AlwaysClamp) then
-                        gSettings.BindMenuTimer = buff[1];
-                        settings.save();
-                    end
-                    imgui.ShowHelp('Determines how long the activation combo must be pressed to open or close binding menu.')
                     imgui.TextColored(header, 'Double Tap Timer');
                     local buff = { gSettings.TapTimer };
                     if imgui.SliderFloat('##TapTimerSlider', buff, 0.1, 1.5, '%.2f', ImGuiSliderFlags_AlwaysClamp) then
