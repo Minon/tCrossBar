@@ -129,6 +129,16 @@ function controller:SetLayout(layoutName)
     end
 end
 
+function controller:RenderBindingMenu()
+    if (self.BindMenuState.Active == true) and (gBindingGUI:GetActive() == false) then
+        if (imgui.Begin(string.format('%s v%s Binding', addon.name, addon.version), { true }, ImGuiWindowFlags_AlwaysAutoResize)) then
+            imgui.Text('Press any macro combination to bind to it.');
+            imgui.Text('Hold binding menu key combination to close this menu.');
+            imgui.End();
+        end
+    end
+end
+
 function controller:Trigger(button, pressed)
     local controls = gSettings.Controls[self.Layout.Name];
 
@@ -223,14 +233,6 @@ function controller:Trigger(button, pressed)
                     end
                 else
                     self.BindMenuState.Active = false;
-                end
-            end
-
-            if (self.BindMenuState.Active == true) and (gBindingGUI:GetActive() == false) then
-                if (imgui.Begin(string.format('%s v%s Binding', addon.name, addon.version), { true }, ImGuiWindowFlags_AlwaysAutoResize)) then
-                    imgui.Text('Press any macro combination to bind to it.');
-                    imgui.Text('Hold binding menu key combination to close this menu.');
-                    imgui.End();
                 end
             end
             return true;
